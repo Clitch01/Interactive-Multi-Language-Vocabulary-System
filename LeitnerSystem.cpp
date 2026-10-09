@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-LeitnerCard::LeitnerCard(int id, int initialLevel)
-    : wordId(id),
+LeitnerCard::LeitnerCard(Word* vocabularyWord, int initialLevel)
+    : word(vocabularyWord),
       level(std::max(LeitnerSystem::MIN_LEVEL,
                      std::min(initialLevel, LeitnerSystem::MAX_LEVEL))),
       correctCount(0),
@@ -13,16 +13,24 @@ LeitnerCard::LeitnerCard(int id, int initialLevel)
 
 void LeitnerSystem::addCard(const LeitnerCard& card)
 {
-    cards[card.wordId] = card;
-    cards[card.wordId].level = std::max(
+    if (card.word == nullptr)
+        return;
+
+    cards[card.word->getEnglish()] = card;
+    cards[card.word->getEnglish()].level = std::max(
         MIN_LEVEL,
-        std::min(cards[card.wordId].level, MAX_LEVEL)
+        std::min(cards[card.word->getEnglish()].level, MAX_LEVEL)
     );
+
+    card.word->setLeitnerBox(cards[card.word->getEnglish()].level);
 }
 
-bool LeitnerSystem::updateResult(int wordId, bool remembered)
+bool LeitnerSystem::updateResult(Word* word, bool remembered)
 {
-    auto it = cards.find(wordId);
+    if (word == nullptr)
+        return false;
+
+    auto it = cards.find(word->getEnglish());
 
     if (it == cards.end())
         return false;
@@ -40,12 +48,17 @@ bool LeitnerSystem::updateResult(int wordId, bool remembered)
         card.level = std::max(card.level - 1, MIN_LEVEL);
     }
 
+    word->setLeitnerBox(card.level);
+
     return true;
 }
 
-const LeitnerCard* LeitnerSystem::getCard(int wordId) const
+const LeitnerCard* LeitnerSystem::getCard(const Word* word) const
 {
-    auto it = cards.find(wordId);
+    if (word == nullptr)
+        return nullptr;
+
+    auto it = cards.find(word->getEnglish());
     return it == cards.end() ? nullptr : &it->second;
 }
 
